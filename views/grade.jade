@@ -1,0 +1,24 @@
+doctype html
+html
+ head
+  title Grade Summary
+  link(rel='stylesheet', href='/stylesheets/style.css')
+  script(type ="text/javascript" src="/javascripts/grade_Validation.js")
+ body
+  h1 Grade Summary
+  p
+   form(action="/updateGrade/#{id}" method="POST")
+    div Name: 
+     input(name="grade_name" type="text" id ="gradName" value ="#{name}" onKeyUp="validate(this.value)")
+     input(id ="btn_change" type="submit" value="change")
+    div Students:
+    ul
+     each student in students
+      li 
+       a(href="/student/#{student.id}") #{student.name}
+    div Subjects:
+    ul
+     each subject in subjects
+       li 
+        a(href="/subject/#{subject.id}") #{subject.name}
+      

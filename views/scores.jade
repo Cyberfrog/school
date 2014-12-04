@@ -1,0 +1,14 @@
+doctype html
+html
+ head
+  title Scores of subject #{subject}
+  link(rel='stylesheet', href='/stylesheets/style.css')  
+ body
+  h1 Scores of subject #{subject} out of #{max}
+  p
+   ul
+    each item in items
+     li
+      div
+       a(href='') #{item.name}
+       | - #{item.score}

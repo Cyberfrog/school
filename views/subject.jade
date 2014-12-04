@@ -1,0 +1,22 @@
+doctype html
+html
+ head
+  title Subject Summary
+  link(rel='stylesheet', href='/stylesheets/style.css')  
+ body
+  h1 Subject Summary
+  table
+   tr 
+    th #{name}
+    th #{maxScore}
+    th 
+     a(href="grade/#{grade[0].id}") #{grade[0].name}
+  table
+   each st in student
+    tr
+     td
+      a(href="student/#{st.id}") #{st.name}
+     td #{st.score}
+
+
+

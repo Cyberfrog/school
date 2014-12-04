@@ -1,0 +1,12 @@
+doctype html
+html
+ head
+  title Grades
+  link(rel='stylesheet', href='/stylesheets/style.css')  
+ body
+  h1 Grades
+  p
+   ul
+    each item in grades
+     li
+      a(href="/grade/#{item.id}") #{item.name}
