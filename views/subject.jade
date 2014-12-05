@@ -10,12 +10,12 @@ html
     th #{name}
     th #{maxScore}
     th 
-     a(href="grade/#{grade[0].id}") #{grade[0].name}
+     a(href="/grade/#{grade[0].id}") #{grade[0].name}
   table
    each st in student
     tr
      td
-      a(href="student/#{st.id}") #{st.name}
+      a(href="/student/#{st.id}") #{st.name}
      td #{st.score}
   button(onclick="location.href='/editSubject/#{id}'") edit subject
 

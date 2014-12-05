@@ -31,6 +31,13 @@ var _getSubjectsByGrade = function(db,onComplete){
 	});	
 };
 
+var _updateSubject = function(subject,db,onComplete){
+	var subject_query = "update subjects set name= $name, grade_id= $grade_id, maxScore = $maxScore where id =$id";
+	var subject_query_params = {"$id":subject.id,"$name":subject.name,"$grade_id":subject.grade_id,"$maxScore":subject.maxScore};
+	db.run(subject_query,subject_query_params,function(err){
+		onComplete(err);
+	});
+}
 var _getStudentSummary = function(id, db,onComplete){
 	var student_grade_query = 'select s.name as name, s.id as id, g.name as grade_name, g.id as grade_id '+
 		'from students s, grades g where s.grade_id = g.id and s.id='+id;
@@ -45,10 +52,9 @@ var _getStudentSummary = function(id, db,onComplete){
 var populateStudent =function(db,student,onComplete){
 	var subject_score_query = 'select su.name, su.id, su.maxScore, sc.score '+
 		'from subjects su, scores sc where su.id = sc.subject_id and sc.student_id ='+student.id;
-	var grade_query='select * from grades';
 	db.all(subject_score_query,function(esc,subjects){			
 		student.subjects = subjects;
-		db.all(grade_query,function(erg,grades){
+		_getGrades(db,function(erg,grades){
 			student.allGrades = grades;
 			onComplete(null,student);
 		});
@@ -88,7 +94,7 @@ var _getSubjectSummary = function(id,db,onComplete){
 					},undefined);
 				});
 				subject.student= students.filter(function(s){return s.score});
-				db.all(grade_query,function(egr,grades){
+				_getGrades(db,function(egr,grades){
 					subject.grade = grades.filter(function(grade){return grade.id==subject.grade_id});
 					subject.allGrades = grades;
 					onComplete(null,subject);
@@ -118,6 +124,7 @@ var _updateStudent =function(student,db,onComplete){
 		})
 	});
 }
+
 var init = function(location){	
 	var operate = function(operation){
 		return function(){
@@ -143,7 +150,8 @@ var init = function(location){
 		getGradeSummary: operate(_getGradeSummary),
 		getSubjectSummary: operate(_getSubjectSummary),
 		updateGradeName: operate(_updateGradeName),
-		updateStudent:operate(_updateStudent)
+		updateStudent:operate(_updateStudent),
+		updateSubject:operate(_updateSubject)
 	};
 
 	return records;

@@ -90,7 +90,6 @@ describe('school_records',function(){
 			school_records.getSubjectSummary(1,function(err,subject){
 				assert.notOk(err);
 				assert.equal(subject.name,'English-1');
-				console.log(subject);
 				assert.deepEqual(subject.student, [ { id: 1, name: 'Abu', score: 75 }]);
 				done();
 			})
@@ -124,6 +123,22 @@ describe('school_records',function(){
 					done();
 				})
 				
+			})
+		})
+	})
+	describe('#updateSubject',function(){
+		it('update subject name to history where id= 1'+
+			'and max score of subject_id 1 to 50 and change grade to 2',function(done){
+			var newSubject={id:1,name:"history",grade_id:2,maxScore:50};
+			school_records.updateSubject(newSubject,function(err){
+				var db = new sqlite3.Database(TEST_DB_PATH);
+				db.get("select name, grade_id,maxScore from subjects  where id = 1",function(testErr,subject){
+					assert.notOk(testErr);
+					assert.equal(subject.name,"history");
+					assert.equal(subject.grade_id,2);
+					assert.equal(subject.maxScore,50);
+					done();
+				})	
 			})
 		})
 	})

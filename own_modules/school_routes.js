@@ -84,5 +84,11 @@ var modifyStudentBody = function(id,body){
 	student.scores = scores;
 	return student;
 } 
-
+exports.updateSubject =function(req,res,next){
+	var subject = req.body;
+	subject.id= req.params.id;
+	school_records.updateSubject(subject,function(err){
+		res.redirect('/subject/'+subject.id);
+	})
+}
 
