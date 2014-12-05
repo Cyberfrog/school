@@ -53,6 +53,7 @@ describe('school_records',function(){
 				assert.deepEqual(s.subjects,[{id:1,name:'English-1',score:75,maxScore:100},
 					{id:2,name:'Maths-1',score:50,maxScore:100},
 					{id:3,name:'Moral Science',score:25,maxScore:50}]);
+				assert.lengthOf(s.allGrades,2);
 				done();
 			})
 		})
@@ -87,13 +88,10 @@ describe('school_records',function(){
 	describe('#getSubjectSummary',function(){
 		it('retrieves the summary of subject 1',function(done){
 			school_records.getSubjectSummary(1,function(err,subject){
-				console.log("=======>>",subject);
 				assert.notOk(err);
 				assert.equal(subject.name,'English-1');
-				assert.deepEqual(subject.student, [ { id: 1, name: 'Abu', score: 75 },
-				   { id: 2, name: 'Babu' },
-				   { id: 3, name: 'Kabu' },
-				   { id: 4, name: 'Dabu' } ]);
+				console.log(subject);
+				assert.deepEqual(subject.student, [ { id: 1, name: 'Abu', score: 75 }]);
 				done();
 			})
 		})

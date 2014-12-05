@@ -35,7 +35,11 @@ exports.editStudent = function(req,res,next){
 			res.render('edit_student',student);
 	});	
 }
-
+exports.editSubject = function(req,res){
+	school_records.getSubjectSummary(req.params.id,function(err,subject){
+		res.render('edit_subject',subject);
+	});
+}
 exports.get_subject_summary = function(req,res,next){
 	school_records.getSubjectSummary(req.params.id,
 	function(err,subject){
@@ -69,6 +73,7 @@ exports.updateStudent=function(req,res,next){
 	});
 }
 var modifyStudentBody = function(id,body){
+	debugger;
 	var student = {id:id,
 		name : body.student_name, 
 		grade_id :body.grade}
