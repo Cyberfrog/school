@@ -77,13 +77,16 @@ var modifyStudentBody = function(id,body){
 	var student = {id:id,
 		name : body.student_name, 
 		grade_id :body.grade}
+		populate_with_Score(student,body);
+	return student;
+} 
+var populate_with_Score = function(student,body){
 	var scores_keys = Object.keys(body).filter(function(key){return key.indexOf("score")>=0});
 	var scores =  scores_keys.map(function(key){
 		return {subject_id:key.split('_')[1],score:body[key]};
 	}) ;
 	student.scores = scores;
-	return student;
-} 
+}
 exports.updateSubject =function(req,res,next){
 	var subject = req.body;
 	subject.id= req.params.id;
@@ -93,12 +96,14 @@ exports.updateSubject =function(req,res,next){
 }
 
 exports.newStudent =function(req,res){
-	school_records.getGrades(function(err,grades){
-		res.render('newStudent',{grades:grades});
+	school_records.getSubjects(req.params.id,function(err,subjects){
+		res.render('newStudent',{subjects:subjects,grade_id:req.params.id});
 	})
 }
 exports.addStudent = function(req,res){
-	school_records.addStudent(req.body,function(err){
+	var newStudent = {grade_id:req.params.id,name:req.body.name};
+	populate_with_Score(newStudent,req.body);
+	school_records.addStudent(newStudent,function(err){
 		res.redirect('/grades');
 	})
 }

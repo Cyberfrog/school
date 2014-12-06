@@ -12,6 +12,7 @@ QueryHelper.prototype = {
 		var query = this;
 		console.log("exicuting:",query.query);
 		db[query.dbMethod](query.query,query.query_params,function(err,result){
+			err&&console.log("ERROR:",err);
 			query.result = err||result;
 			if(query.isQuery(query.next)){
 				query.next.pre_result = err || result;

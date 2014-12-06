@@ -1,4 +1,5 @@
 var lib = require('../own_modules/school_records');
+var queryHelper = require('../own_modules/query_helper.js').queryHelper;
 var assert = require('chai').assert;
 var fs = require('fs');
 var dbFileData = fs.readFileSync('tests/data/school.db.backup');
@@ -143,19 +144,37 @@ describe('school_records',function(){
 		})
 	})
 	describe('#Add Student',function(){
-		it('add student name ="raj" gard_id=1',function(done){
-			var newStudent={name:"raj",grade_id:1};
+		it('add student name ="raj" gard_id=1 and score for subject 1 is 70',function(done){
+			var newStudent={name:"rajjj",grade_id:1 ,
+						scores:[{subject_id:1,score:30}]};
 			school_records.addStudent(newStudent,function(err){
 				var db = new sqlite3.Database(TEST_DB_PATH);
-				db.all("select name, grade_id from students",function(testErr,students){
-					assert.notOk(testErr);
-					var raj = students.filter(function(s){return s.name=='raj'});
-					assert.lengthOf(raj,1);
-					assert.equal(raj[0].grade_id,1);
-					done();
-				})	
+				db.get("select id, name, grade_id from students  where name ='rajj'",function(err,student){
+					db.get("select score from scores where subject_id = 1 and student_id ="+student.id,
+						function(err,score){
+							assert.equal(student.name,"rajj");
+							assert.typeOf(student.id,'number');
+							assert.equal(score.score,30);
+							done();
+						});
+				})
+		
+
 			})
 		})
+
+	});
+	describe('#getSubjects',function(){
+		it('retrive subjects for grade 1',function(done){
+			school_records.getSubjects(1,function(err,subjects){
+				var expected = [{id:1,name:'English-1',maxScore:100},
+								{id:2,name:'Maths-1',maxScore:100},
+								{id:3,name:'Moral Science',maxScore:50}]
+				assert.deepEqual(subjects,expected);
+				done();
+			})
+		})
+		
 	});
 
 })
