@@ -92,3 +92,13 @@ exports.updateSubject =function(req,res,next){
 	})
 }
 
+exports.newStudent =function(req,res){
+	school_records.getGrades(function(err,grades){
+		res.render('newStudent',{grades:grades});
+	})
+}
+exports.addStudent = function(req,res){
+	school_records.addStudent(req.body,function(err){
+		res.redirect('/grades');
+	})
+}

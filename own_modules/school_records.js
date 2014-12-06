@@ -1,4 +1,6 @@
 var sqlite3 = require("sqlite3").verbose();
+var queryHelper = require("./query_helper.js").queryHelper;
+
 
 var _getGrades = function(db,onComplete){
 	var query = 'select * from grades';
@@ -82,25 +84,26 @@ var populateGradeWithStudent = function(db,grade,onComplete){
 	
 var _getSubjectSummary = function(id,db,onComplete){
 	var subject_query = "select id, grade_id, name, maxScore from subjects where id="+id;
-	var student_query = "select id, name from students where grade_id=GRADE_ID";
-	var score_query = "select score, student_id from scores where subject_id="+id;
-	var grade_query = "select * from grades ";
+
 	db.get(subject_query,function(err,subject){
-		db.all(student_query.replace("GRADE_ID",subject.grade_id),function(est,students){
-			db.all(score_query,function(esu,scores){
+		var populateSubject =function(egr,grades){
+			console.log('hiii got it',err);
+			 var students = student_query.result;
+			 var scores = score_query.result;
 				students.forEach(function(s){
 					s.score= scores.reduce(function(pv,currentScore){
 						return (s.id==currentScore.student_id)?currentScore.score:pv;
 					},undefined);
 				});
 				subject.student= students.filter(function(s){return s.score});
-				_getGrades(db,function(egr,grades){
-					subject.grade = grades.filter(function(grade){return grade.id==subject.grade_id});
-					subject.allGrades = grades;
-					onComplete(null,subject);
-				});	
-			});
-		})
+				subject.grade = grades.filter(function(grade){return grade.id==subject.grade_id});
+				subject.allGrades = grades;
+				onComplete(null,subject);
+		}
+		var grade_query = new queryHelper("select * from grades",populateSubject,'all')
+		var score_query = new queryHelper("select score, student_id from scores where subject_id="+id,grade_query,'all');
+		var student_query = new queryHelper("select id, name from students where grade_id = "+subject.grade_id,score_query,'all');
+		student_query.fire(db);
 	})
 };
 var _updateGradeName = function(grade,db,onComplete){
@@ -122,6 +125,13 @@ var _updateStudent =function(student,db,onComplete){
 					}
 				});
 		})
+	});
+}
+var _addStudent = function(student,db,onComplete){
+	var insert_query = "insert into students (name,grade_id) values($name,$grade_id);";
+	var params = { '$name':student.name,"$grade_id":student.grade_id};
+	db.run(insert_query,params,function(err){
+		onComplete(err);
 	});
 }
 
@@ -151,7 +161,8 @@ var init = function(location){
 		getSubjectSummary: operate(_getSubjectSummary),
 		updateGradeName: operate(_updateGradeName),
 		updateStudent:operate(_updateStudent),
-		updateSubject:operate(_updateSubject)
+		updateSubject:operate(_updateSubject),
+		addStudent:operate(_addStudent)
 	};
 
 	return records;

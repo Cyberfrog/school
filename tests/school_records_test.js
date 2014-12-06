@@ -142,5 +142,20 @@ describe('school_records',function(){
 			})
 		})
 	})
+	describe('#Add Student',function(){
+		it('add student name ="raj" gard_id=1',function(done){
+			var newStudent={name:"raj",grade_id:1};
+			school_records.addStudent(newStudent,function(err){
+				var db = new sqlite3.Database(TEST_DB_PATH);
+				db.all("select name, grade_id from students",function(testErr,students){
+					assert.notOk(testErr);
+					var raj = students.filter(function(s){return s.name=='raj'});
+					assert.lengthOf(raj,1);
+					assert.equal(raj[0].grade_id,1);
+					done();
+				})	
+			})
+		})
+	});
 
 })
