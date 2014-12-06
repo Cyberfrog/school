@@ -76,7 +76,7 @@ var modifyStudentBody = function(id,body){
 	debugger;
 	var student = {id:id,
 		name : body.student_name, 
-		grade_id :body.grade}
+		grade_id:body.grade}
 		populate_with_Score(student,body);
 	return student;
 } 
@@ -104,6 +104,6 @@ exports.addStudent = function(req,res){
 	var newStudent = {grade_id:req.params.id,name:req.body.name};
 	populate_with_Score(newStudent,req.body);
 	school_records.addStudent(newStudent,function(err){
-		res.redirect('/grades');
+		res.redirect('/grade/'+newStudent.grade_id);
 	})
 }

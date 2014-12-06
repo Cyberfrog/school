@@ -31,7 +31,7 @@ app.post('/updateStudent/:id',school_routes.updateStudent);
 app.get('/editSubject/:id',school_routes.editSubject);
 app.post('/updateSubject/:id',school_routes.updateSubject);
 app.get('/newStudent/:id',school_routes.newStudent);
-app.post('/addStudent/:1d',school_routes.addStudent);
+app.post('/addStudent/:id',school_routes.addStudent);
 
 
 // catch 404 and forward to error handler

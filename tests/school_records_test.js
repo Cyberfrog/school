@@ -145,21 +145,19 @@ describe('school_records',function(){
 	})
 	describe('#Add Student',function(){
 		it('add student name ="raj" gard_id=1 and score for subject 1 is 70',function(done){
-			var newStudent={name:"rajjj",grade_id:1 ,
+			var newStudent={name:"raj",grade_id:1 ,
 						scores:[{subject_id:1,score:30}]};
 			school_records.addStudent(newStudent,function(err){
 				var db = new sqlite3.Database(TEST_DB_PATH);
-				db.get("select id, name, grade_id from students  where name ='rajj'",function(err,student){
-					db.get("select score from scores where subject_id = 1 and student_id ="+student.id,
+				db.get("select name , max(id) from students",function(err,student){
+					db.get("select score from scores where subject_id = 1 and student_id ="+student['max(id)'],
 						function(err,score){
-							assert.equal(student.name,"rajj");
-							assert.typeOf(student.id,'number');
+							assert.equal(student.name,"raj");
+							assert.typeOf(student['max(id)'],'number');
 							assert.equal(score.score,30);
 							done();
 						});
 				})
-		
-
 			})
 		})
 
