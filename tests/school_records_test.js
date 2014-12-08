@@ -191,4 +191,30 @@ describe('school_records',function(){
 		})
 	})	
 
+	describe('#subject summary',function(){
+		it('add score for new Student',function(done){
+			var newScore = {subject_id:1,student_id:3,score:50}
+			school_records.addScore(newScore,function(err){
+				var db = new sqlite3.Database(TEST_DB_PATH);
+				db.get("select score from Scores where subject_id=1 and student_id =3",
+					function(err,score){
+						assert.equal(score.score,50);
+						done();
+			 	});
+				assert.notOk(err);
+			})
+		})
+	});
+
+	describe('#subject summary',function(){
+		it('get new student applicable for subject 1',function(done){
+			school_records.getNewStudentsForSubject(1,function(err,subject){
+				assert.equal(subject.name,"English-1");
+				assert.equal(subject.maxScore,100);
+				assert.lengthOf(subject.students,3);
+				assert.deepEqual(subject.students ,[{id:2,name:"Babu"},{id:3,name:"Kabu"},{id:4,name:"Dabu"}]);
+				done();
+			})
+		})
+	});
 })

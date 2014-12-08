@@ -117,3 +117,16 @@ exports.addSubject = function(req,res){
 		res.redirect('/grade/'+newSubject.grade_id);
 	});
 } 
+exports.newScore = function(req,res){
+	var subject = school_records.getNewStudentsForSubject(req.params.id,
+		function(err,subject){
+			res.render("newScore",{subject:subject});
+		});
+}
+exports.addScore = function(req,res){
+	var newScore = req.body;
+		newScore.subject_id = req.params.id;
+		school_records.addScore(newScore,function(err){
+			res.redirect('/subject/'+newScore.subject_id);
+		});
+}

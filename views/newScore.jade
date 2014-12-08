@@ -1,0 +1,17 @@
+doctype html
+html
+ head
+  title Subject Summary
+  link(rel='stylesheet', href='/stylesheets/style.css')  
+ body
+  h1 Subject Summary
+  p
+   form(action="/addScore/#{subject.id}" method="POST")
+    div Grade:
+     select(name="student_id")
+      each student in subject.students
+       option(value="#{student.id}") #{student.name} 
+    div Score:
+      input(name="score" type="number" value ="0" min="0" max="#{subject.maxScore}")
+    p   
+     input(type="submit" value="sbumit")

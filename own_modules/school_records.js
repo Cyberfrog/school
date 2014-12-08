@@ -152,6 +152,36 @@ var _addSubject = function(subject,db,onComplete){
 	var params ={"$grade_id":subject.grade_id,"$name":subject.name,"$maxScore":subject.maxScore};
 	new queryHelper(query,onComplete,'run',params).fire(db);
 }
+var _addScore = function(score,db,onComplete){
+	var query ="insert into scores (subject_id,student_id,score) values($subject_id,$student_id,$score);"
+	var params={"$subject_id":score.subject_id,"$student_id":score.student_id,"$score":score.score};
+  new queryHelper(query,onComplete,'run',params).fire(db);	
+}
+var _getNewStudentsForSubject = function(subject_id,db,onComplete){
+	var subject_query = "select id, grade_id, name, maxScore from subjects where id="+subject_id;
+	db.get(subject_query,function(err,subject){
+		var populateSubject =function(egr,grades){
+			 var students = student_query.result;
+			 var scores = score_query.result;
+				students.forEach(function(s){
+					s.score= scores.reduce(function(pv,currentScore){
+						return (s.id==currentScore.student_id)?currentScore.score:pv;
+					},undefined);
+				});
+				var newStudents= students.filter(function(s){return !s.score});
+				subject.students = newStudents.map(function(s){
+					return {id:s.id,name:s.name};
+				})
+				subject.grade = grades.filter(function(grade){return grade.id==subject.grade_id});
+				subject.allGrades = grades;
+				onComplete(null,subject);
+		}
+		var grade_query = new queryHelper("select * from grades",populateSubject,'all')
+		var score_query = new queryHelper("select score, student_id from scores where subject_id="+subject_id,grade_query,'all');
+		var student_query = new queryHelper("select id, name from students where grade_id = "+subject.grade_id,score_query,'all');
+		student_query.fire(db);
+	})
+}
 var init = function(location){	
 	var operate = function(operation){
 		return function(){
@@ -181,7 +211,9 @@ var init = function(location){
 		updateSubject:operate(_updateSubject),
 		addStudent:operate(_addStudent),
 		getSubjects:operate(_getSubjects),
-		addSubject:operate(_addSubject)
+		addSubject:operate(_addSubject),
+		addScore:operate(_addScore),
+		getNewStudentsForSubject:operate(_getNewStudentsForSubject)
 	};
 
 	return records;
