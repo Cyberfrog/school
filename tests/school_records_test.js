@@ -163,7 +163,7 @@ describe('school_records',function(){
 
 	});
 	describe('#getSubjects',function(){
-		it('retrive subjects for grade 1',function(done){
+		it('retrieve subjects for grade 1',function(done){
 			school_records.getSubjects(1,function(err,subjects){
 				var expected = [{id:1,name:'English-1',maxScore:100},
 								{id:2,name:'Maths-1',maxScore:100},
@@ -171,8 +171,24 @@ describe('school_records',function(){
 				assert.deepEqual(subjects,expected);
 				done();
 			})
-		})
-		
+		})	
 	});
+
+	describe('#add new Subject',function(){
+		it('add new subject in subjects table for grade 1',function(done){
+			var newSubject = {grade_id:1,name:"Music",maxScore:50}
+			school_records.addSubject(newSubject,function(err){
+				var db = new sqlite3.Database(TEST_DB_PATH);
+				db.get("select name, grade_id , maxScore from subjects where id=(select max(id) from subjects)",
+					function(err,subject){
+						assert.equal(subject.name,"Music");
+						assert.equal(subject.grade_id,1);
+						assert.equal(subject.maxScore,50);
+						done();
+			 	});
+				assert.notOk(err);
+			})
+		})
+	})	
 
 })

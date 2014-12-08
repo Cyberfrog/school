@@ -1,0 +1,11 @@
+html
+ head
+  title ADD STUDENT
+ body
+  form(action="/addSubject/#{grade_id}" method="POST")
+   p Name:
+    input(type ="text" name="name")
+   p Max Score:
+    input(type ="text" name="maxScore")
+   p 
+   input(type="submit" value ="Add")

@@ -107,3 +107,13 @@ exports.addStudent = function(req,res){
 		res.redirect('/grade/'+newStudent.grade_id);
 	})
 }
+exports.newSubject = function(req,res){
+	res.render("newSubject",{grade_id:req.params.id});
+}
+exports.addSubject = function(req,res){
+	var newSubject = req.body;
+	newSubject.grade_id = req.params.id;
+	school_records.addSubject(newSubject,function(err){
+		res.redirect('/grade/'+newSubject.grade_id);
+	});
+} 

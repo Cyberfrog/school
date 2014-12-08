@@ -53,7 +53,8 @@ var _getStudentSummary = function(id, db,onComplete){
 
 var populateStudent =function(db,student,onComplete){
 	var subject_score_query = 'select su.name, su.id, su.maxScore, sc.score '+
-		'from subjects su, scores sc where su.grade_id = '+student.grade_id+' and su.id = sc.subject_id and sc.student_id ='+student.id;
+		'from subjects su, scores sc where su.grade_id = '+student.grade_id+
+		' and su.id = sc.subject_id and sc.student_id ='+student.id;
 	db.all(subject_score_query,function(esc,subjects){			
 		student.subjects = subjects||[];
 		_getGrades(db,function(erg,grades){
@@ -146,6 +147,11 @@ var _getSubjects = function(grade_id,db,onComplete){
 	var query ="select id, name, maxScore from subjects where grade_id="+grade_id;
 	new queryHelper(query,onComplete,'all').fire(db);
 }
+var _addSubject = function(subject,db,onComplete){
+	var query = "insert into subjects (grade_id,name,maxScore) values($grade_id,$name,$maxScore);";
+	var params ={"$grade_id":subject.grade_id,"$name":subject.name,"$maxScore":subject.maxScore};
+	new queryHelper(query,onComplete,'run',params).fire(db);
+}
 var init = function(location){	
 	var operate = function(operation){
 		return function(){
@@ -174,7 +180,8 @@ var init = function(location){
 		updateStudent:operate(_updateStudent),
 		updateSubject:operate(_updateSubject),
 		addStudent:operate(_addStudent),
-		getSubjects:operate(_getSubjects)
+		getSubjects:operate(_getSubjects),
+		addSubject:operate(_addSubject)
 	};
 
 	return records;
