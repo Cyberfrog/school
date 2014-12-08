@@ -101,29 +101,23 @@ var _updateStudent =function(student,db,onComplete){
 	var student_query_params ={'$id':student.id,'$name':student.name,
 								'$grade_id':student.grade_id};
 	db.run(student_query,student_query_params,function(err){
-		student.scores.forEach(function(score,index,scores){
-			var score_query="update scores set score= $score where student_id = $stud_id and subject_id = $sub_id";
-			var score_query_params={'$score':score.score,'$stud_id':student.id,'$sub_id':score.subject_id};
-			db.run(score_query,score_query_params,function(esc){
-					if(index>=scores.length-1){
-						onComplete(err);
-					}
-				});
-		})
+		var scores = student.scores.map(function(score){
+			return {'$score':score.score,'$stud_id':student.id,'$sub_id':score.subject_id};
+		});
+		var score_query="update scores set score= $score where student_id = $stud_id and subject_id = $sub_id";
+		queryHelper.each(score_query,scores,onComplete,db);
 	});
 }
+
 var _addStudent = function(student,db,onComplete){
 	var insert_query = "insert into students (name,grade_id) values($name,$grade_id);";
 	var params = { '$name':student.name,"$grade_id":student.grade_id};
 	var score_query = function(err,stud_id){
-		student.scores.forEach(function(sc,index){
-			var params = {'$stud_id':stud_id['max(id)'],'$sub_id':sc.subject_id,"$score":sc.score};
-			db.run("insert into scores(student_id,subject_id,score) values($stud_id,$sub_id,$score)",params,function(err){			
-				if(index>=student.scores.length-1){
-					onComplete(err);
-				}
-			});	
+		var scores = student.scores.map(function(sc){
+			return {'$stud_id':stud_id['max(id)'],'$sub_id':sc.subject_id,"$score":sc.score};
 		});
+		var insert_query ="insert into scores(student_id,subject_id,score) values($stud_id,$sub_id,$score)";
+		queryHelper.each(insert_query,scores,onComplete,db);
 	}
 	var select_query= new queryHelper("select max(id) from students",score_query,'get');
 	var insert_query = new queryHelper("insert into students (name,grade_id) values($name,$grade_id);",select_query,'run',params);

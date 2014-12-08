@@ -7,7 +7,7 @@ html
   h1 Subject Summary
   p
    form(action="/addScore/#{subject.id}" method="POST")
-    div Grade:
+    div Student:
      select(name="student_id")
       each student in subject.students
        option(value="#{student.id}") #{student.name} 

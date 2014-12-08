@@ -50,3 +50,28 @@ describe('#queryHelper',function(){
 			create_query.fire(db);
 		});		
 	})
+    describe("#queryHelper.each",function(){
+    	it("exicutes each query with different parameters and call onComplete after finish",function(done){
+			var db = new sqlite3.Database(':memory:');
+			var onCreate = function(err){
+	    		var query ="insert into student (id , name) values($id, $name);";
+	    		var params = [{"$id":1,"$name":'bunti'},
+		    		{"$id":2,"$name":'dolly'},
+		    		{"$id":3,"$name":'nandu'}];
+	    			QueryHelper.each(query,params,select_query,db);
+			}
+
+			var onComplete= function(err,students){
+    			var expected = [{"id":1,"name":'bunti'},
+	    			{"id":2,"name":'dolly'},
+	    			{"id":3,"name":'nandu'}]; 
+				assert.lengthOf(students,3);
+				assert.deepEqual(expected,students);
+				done();
+			}
+			var select_query =new QueryHelper("select * from student ",onComplete,'all');
+			var create_query = new QueryHelper("create table student (id integer , name text); ",onCreate,'run');
+			create_query.fire(db);
+
+    	})
+    })
