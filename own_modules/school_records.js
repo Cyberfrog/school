@@ -84,26 +84,12 @@ var populateGradeWithStudent = function(db,grade,onComplete){
 }
 	
 var _getSubjectSummary = function(id,db,onComplete){
-	var subject_query = "select id, grade_id, name, maxScore from subjects where id="+id;
-	db.get(subject_query,function(err,subject){
-		var populateSubject =function(egr,grades){
-			 var students = student_query.result;
-			 var scores = score_query.result;
-				students.forEach(function(s){
-					s.score= scores.reduce(function(pv,currentScore){
-						return (s.id==currentScore.student_id)?currentScore.score:pv;
-					},undefined);
-				});
-				subject.student= students.filter(function(s){return s.score});
-				subject.grade = grades.filter(function(grade){return grade.id==subject.grade_id});
-				subject.allGrades = grades;
-				onComplete(null,subject);
-		}
-		var grade_query = new queryHelper("select * from grades",populateSubject,'all')
-		var score_query = new queryHelper("select score, student_id from scores where subject_id="+id,grade_query,'all');
-		var student_query = new queryHelper("select id, name from students where grade_id = "+subject.grade_id,score_query,'all');
-		student_query.fire(db);
-	})
+	getSubjectDetails(id,db,function(err,subject){
+		 var students = subject.students.filter(function(s){return s.score});
+		 
+		 subject.students = students;
+		 onComplete(err,subject);
+	});
 };
 var _updateGradeName = function(grade,db,onComplete){
 	     db.run("UPDATE grades SET name = $name WHERE id = $id",
@@ -157,7 +143,7 @@ var _addScore = function(score,db,onComplete){
 	var params={"$subject_id":score.subject_id,"$student_id":score.student_id,"$score":score.score};
   new queryHelper(query,onComplete,'run',params).fire(db);	
 }
-var _getNewStudentsForSubject = function(subject_id,db,onComplete){
+var getSubjectDetails = function(subject_id,db,onComplete){
 	var subject_query = "select id, grade_id, name, maxScore from subjects where id="+subject_id;
 	db.get(subject_query,function(err,subject){
 		var populateSubject =function(egr,grades){
@@ -168,10 +154,7 @@ var _getNewStudentsForSubject = function(subject_id,db,onComplete){
 						return (s.id==currentScore.student_id)?currentScore.score:pv;
 					},undefined);
 				});
-				var newStudents= students.filter(function(s){return !s.score});
-				subject.students = newStudents.map(function(s){
-					return {id:s.id,name:s.name};
-				})
+				subject.students = students;
 				subject.grade = grades.filter(function(grade){return grade.id==subject.grade_id});
 				subject.allGrades = grades;
 				onComplete(null,subject);
@@ -181,6 +164,16 @@ var _getNewStudentsForSubject = function(subject_id,db,onComplete){
 		var student_query = new queryHelper("select id, name from students where grade_id = "+subject.grade_id,score_query,'all');
 		student_query.fire(db);
 	})
+}
+var _getNewStudentsForSubject = function(subject_id,db,onComplete){
+	getSubjectDetails(subject_id,db,function(err,subject){
+		var newStudents= subject.students.filter(function(s){return !s.score});
+		subject.students = newStudents.map(function(s){
+			return {id:s.id,name:s.name};
+		});
+		onComplete(err,subject);
+	});
+	
 }
 var init = function(location){	
 	var operate = function(operation){

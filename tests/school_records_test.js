@@ -91,7 +91,7 @@ describe('school_records',function(){
 			school_records.getSubjectSummary(1,function(err,subject){
 				assert.notOk(err);
 				assert.equal(subject.name,'English-1');
-				assert.deepEqual(subject.student, [ { id: 1, name: 'Abu', score: 75 }]);
+				assert.deepEqual(subject.students, [ { id: 1, name: 'Abu', score: 75 }]);
 				done();
 			})
 		})
