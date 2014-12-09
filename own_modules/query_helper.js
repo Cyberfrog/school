@@ -4,6 +4,7 @@ var QueryHelper  = function(query,next,method,query_params){
 	this.dbMethod = method;
 	this.query_params = query_params;
 }
+
 QueryHelper.prototype = {
 	isQuery:function(query){
 		return ((query.query)&&(query.next)&&true)||false;
@@ -23,18 +24,20 @@ QueryHelper.prototype = {
 		});
 	}
 }
+
 QueryHelper.each =function(query_template,parameters,onComplete,db){
 	
 	var querys =  parameters.map(function(parameter){
-	 		return queryParser(query_template,parameter);
+	 	return queryParser(query_template,parameter);
 	});
 	queryHelpers = querys.map(function(query){
 		return new QueryHelper(query,null,'run');
 	});
 	createChain(queryHelpers,onComplete);
-	debugger;
+	
 	queryHelpers[0].fire(db);
 }
+
 var createChain = function(queryHelpers,last_element){
 	queryHelpers.forEach(function(query,index){
 		query.next = queryHelpers[index+1];
@@ -42,6 +45,7 @@ var createChain = function(queryHelpers,last_element){
 	var lastQuery = queryHelpers[queryHelpers.length-1];
 	lastQuery.next = last_element;
 }
+
 var queryParser = function(query_template,parameter){
 	var template = query_template;
 	var placeHolders = Object.keys(parameter);
