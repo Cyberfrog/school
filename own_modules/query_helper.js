@@ -6,7 +6,8 @@ var QueryHelper  = function(query,next,method,query_params){
 }
 
 QueryHelper.prototype = {
-	isQuery:function(query){
+	isNextQuery:function(){
+		var query =this.next;
 		return ((query.query)&&(query.next)&&true)||false;
 	},
 	fire:function(db){
@@ -15,7 +16,7 @@ QueryHelper.prototype = {
 		var callBack = function(err,result){
 			err&&console.log("ERROR:",err);
 			query.result = err||result;
-			if(query.isQuery(query.next)){
+			if(query.isNextQuery()){
 				query.next.pre_result = err || result;
 				query.next.fire(db);
 				return;

@@ -14,13 +14,14 @@ describe('#queryHelper',function(){
 		it('query has fire and isQuery function ',function(done){
 			var query = new QueryHelper("select * form student where id=$id",function(err,x){},'get',{'$id':1});
 			assert.typeOf(query.fire, 'Function');
-			assert.typeOf(query.isQuery,'Function');
+			assert.typeOf(query.isNextQuery,'Function');
 		    done();
 		});
-		it('isQuery function returns true for query Object',function(done){
-			var query = new QueryHelper("select * form student where id=$id",function(err,x){},'get',{'$id':1});
-			assert.ok(query.isQuery(query));
-			assert.notOk(query.isQuery(new Function()));
+		it('isNextQuery function returns true for query Object',function(done){
+			var next = new QueryHelper("select * form student where id=$id",new Function(),'get',{'$id':1});
+			var query = new QueryHelper("select * form student where id=$id",next,'get',{'$id':1});
+			assert.ok(query.isNextQuery());
+			assert.notOk(next.isNextQuery());
 		    done();
 		});
 		it('fire function executes the query on given db and call next',function(done){
