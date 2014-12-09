@@ -12,7 +12,7 @@ QueryHelper.prototype = {
 	fire:function(db){
 		var query = this;
 		console.log("executing:",query.query);
-		db[query.dbMethod](query.query,query.query_params,function(err,result){
+		var callBack = function(err,result){
 			err&&console.log("ERROR:",err);
 			query.result = err||result;
 			if(query.isQuery(query.next)){
@@ -21,20 +21,18 @@ QueryHelper.prototype = {
 				return;
 			}
 			query.next(err,result);
-		});
-	}
+		}
+		db[query.dbMethod](query.query,query.query_params,callBack); 
+	}		
 }
 
-QueryHelper.each =function(query_template,parameters,onComplete,db){
-	
-	var querys =  parameters.map(function(parameter){
-	 	return queryParser(query_template,parameter);
-	});
-	queryHelpers = querys.map(function(query){
-		return new QueryHelper(query,null,'run');
+QueryHelper.each =function(query,parameters,onComplete,db){
+
+	var queryHelpers =  parameters.map(function(parameter){
+	 	return new QueryHelper(query,null,'run',parameter);
 	});
 	createChain(queryHelpers,onComplete);
-	
+
 	queryHelpers[0].fire(db);
 }
 
@@ -46,13 +44,5 @@ var createChain = function(queryHelpers,last_element){
 	lastQuery.next = last_element;
 }
 
-var queryParser = function(query_template,parameter){
-	var template = query_template;
-	var placeHolders = Object.keys(parameter);
-    var query = placeHolders.reduce(function(replaced_query,placeHolder){
-    	return replaced_query.replace(placeHolder,"'"+parameter[placeHolder]+"'");
-    },template);
-    return query; 
-}
 
 exports.queryHelper = QueryHelper;
