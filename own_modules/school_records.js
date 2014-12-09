@@ -1,36 +1,35 @@
 var sqlite3 = require("sqlite3").verbose();
 var queryHelper = require("./query_helper.js").queryHelper;
 
-
-var _getGrades = function(db,onComplete){
-	var query = 'select * from grades';
-	db.all(query,onComplete);
+var _getGrades = function(db,next){
+	var query = new queryHelper('select * from grades',next,'all');
+	query.fire(db);
+	return query;
 };
 
 var _getStudentsByGrade = function(db,onComplete){
-	_getGrades(db,function(err,grades){		
-		db.all('select * from students', function(err1,students){			
-			allocateStudents(grades,students);
-			onComplete(null,grades);
-		})
-	});	
+	var next=function(err,students){			
+		allocateToGrade(grades_query.result,students,'students');
+		onComplete(null,grades_query.result);
+	}
+	var student_query = new queryHelper('select * from students',next,'all');
+	var grades_query = _getGrades(db,student_query);	
 };
-var allocateStudents =function(grades,students){
+
+var allocateToGrade = function(grades,resources,resource_name){
 	grades.forEach(function(grade){
-		grade.students = students.filter(function(student){
-			return student.grade_id==grade.id});
+		grade[resource_name] = resources.filter(function(resource){
+			return resource.grade_id==grade.id});
 	})			
 }
 
 var _getSubjectsByGrade = function(db,onComplete){
-	_getGrades(db,function(err,grades){		
-		db.all('select * from subjects', function(err1,subjects){
-			grades.forEach(function(grade){
-				grade.subjects = subjects.filter(function(subject){return subject.grade_id==grade.id});
-			})			
-			onComplete(null,grades);
-		})
-	});	
+	var next = function(err,subjects){
+		allocateToGrade(grades_query.result,subjects,'subjects');			
+		onComplete(null,grades_query.result);
+	}
+	var subject_query = new queryHelper('select * from subjects',next,'all')
+	var grades_query= _getGrades(db,subject_query);	
 };
 
 var _updateSubject = function(subject,db,onComplete){
@@ -39,6 +38,7 @@ var _updateSubject = function(subject,db,onComplete){
 			"$grade_id":subject.grade_id,"$maxScore":subject.maxScore};
 	db.run(subject_query,subject_query_params,onComplete);
 }
+
 var _getStudentSummary = function(id, db,onComplete){
 	var student_grade_query = 'select s.name as name, s.id as id, g.name as grade_name, g.id as grade_id '+
 		'from students s, grades g where s.grade_id = g.id and s.id='+id;
@@ -54,14 +54,16 @@ var allocateSubjects =function(db,student,onComplete){
 	var subject_score_query = 'select su.name, su.id, su.maxScore, sc.score '+
 		'from subjects su, scores sc where su.grade_id = '+student.grade_id+
 		' and su.id = sc.subject_id and sc.student_id ='+student.id;
-	db.all(subject_score_query,function(esc,subjects){			
+	var next = function(erg,subjects){
 		student.subjects = subjects||[];
-		_getGrades(db,function(erg,grades){
-			student.allGrades = grades;
-			onComplete(null,student);
-		});
-	});
+		student.allGrades = grades_query.result;
+		onComplete(null,student);
+	}
+	var query =new queryHelper(subject_score_query,next,'all')	
+	var grades_query=_getGrades(db,query);
+	
 }
+
 var _getGradeSummary = function(id,db,onComplete){
 	var grade_query = "select id, name from grades where id="+id;
 	db.get(grade_query,function(err,grade){
@@ -69,17 +71,17 @@ var _getGradeSummary = function(id,db,onComplete){
 		populateGradeWithStudent(db,grade,onComplete);
 	});
 };
+
 var populateGradeWithStudent = function(db,grade,onComplete){
-	var subject_query = "select id, name from subjects where grade_id="+grade.id;
-	var student_query = "select id, name from students where grade_id="+grade.id;
-	
-	db.all(student_query,function(est,students){
-		grade.students = students;
-		db.all(subject_query,function(esu,subjects){
-			grade.subjects = subjects;
-			onComplete(null,grade);		
-		});
-	});
+	var param= {"$grade_id":grade.id};
+	var allocate = function(esu,subjects){
+		grade.students = student_query.result;
+		grade.subjects = subject_query.result;
+		onComplete(null,grade);		
+	}
+	var subject_query = new queryHelper("select id, name from subjects where grade_id=$grade_id",allocate,'all',param);
+	var student_query = new queryHelper("select id, name from students where grade_id=$grade_id",subject_query,'all',param);	
+	student_query.fire(db);
 }
 	
 var _getSubjectSummary = function(id,db,onComplete){
@@ -89,11 +91,13 @@ var _getSubjectSummary = function(id,db,onComplete){
 		 onComplete(err,subject);
 	});
 };
+
 var _updateGradeName = function(grade,db,onComplete){
 	     db.run("UPDATE grades SET name = $name WHERE id = $id",
 	     	{'$id':grade.id,'$name':grade.name}, 
 	     	onComplete);
 }
+
 var _updateStudent =function(student,db,onComplete){
 	var student_query ="update students set name = $name, grade_id=$grade_id where id =$id";
 	var student_query_params ={'$id':student.id,'$name':student.name,
@@ -102,30 +106,36 @@ var _updateStudent =function(student,db,onComplete){
 		updateScores(student.scores,student.id,db,onComplete);
 	});
 }
+
 var updateScores = function(scores,student_id,db,onComplete){
 	var scores = formatScores(scores,student_id);
 	var score_query="update scores set score= $score where student_id = $stud_id and subject_id = $sub_id";
-	queryHelper.each(score_query,scores,onComplete,db);
-	
+	queryHelper.each(score_query,scores,onComplete,db);	
 }
+
 var formatScores = function(scores,student_id){
 	return scores.map(function(score){
 		return {'$score':score.score,'$stud_id':student_id,'$sub_id':score.subject_id};
 	});
 }
+
 var _addStudent = function(student,db,onComplete){
 	var insert_query = "insert into students (name,grade_id) values($name,$grade_id);";
 	var params = { '$name':student.name,"$grade_id":student.grade_id};
 	var score_query = function(err,stud_id){
-		var scores = student.scores.map(function(sc){
-			return {'$stud_id':stud_id['max(id)'],'$sub_id':sc.subject_id,"$score":sc.score};
-		});
-		var insert_query ="insert into scores(student_id,subject_id,score) values($stud_id,$sub_id,$score)";
-		queryHelper.each(insert_query,scores,onComplete,db);
+		insertScore(student,stud_id,onComplete,db);
 	}
 	var select_query= new queryHelper("select max(id) from students",score_query,'get');
 	var insert_query = new queryHelper("insert into students (name,grade_id) values($name,$grade_id);",select_query,'run',params);
 	insert_query.fire(db);
+}
+
+var insertScore =function(student,stud_id,onComplete,db){
+	var scores = student.scores.map(function(sc){
+		return {'$stud_id':stud_id['max(id)'],'$sub_id':sc.subject_id,"$score":sc.score};
+	});
+	var insert_query ="insert into scores(student_id,subject_id,score) values($stud_id,$sub_id,$score)";
+	queryHelper.each(insert_query,scores,onComplete,db);
 }
 
 var _getSubjects = function(grade_id,db,onComplete){
@@ -146,23 +156,25 @@ var _addScore = function(score,db,onComplete){
 }
 
 var getSubjectDetails = function(subject_id,db,onComplete){
-	var subject_query = "select id, grade_id, name, maxScore from subjects where id="+subject_id;
-	db.get(subject_query,function(err,subject){
-		var populateSubject =function(egr,grades){
-			var students = student_query.result;
-			allocateScores(students,score_query.result);
-			subject.students = students;
-			subject.grade = getGrade(subject.grade_id,grades);
-			subject.allGrades = grades;
-			onComplete(null,subject);
-		}
-		var grade_query = new queryHelper("select * from grades",populateSubject,'all')
-		var score_query = new queryHelper("select score, student_id from scores where subject_id="+subject_id,grade_query,'all');
-		var student_query = new queryHelper("select id, name from students where grade_id = "+subject.grade_id,score_query,'all');
-		student_query.fire(db);
+	var populateSubject =function(err,scores){
+		var students = student_query.result;
+		var subject = subject_query.result;
+		allocateScores(students,scores);
+		subject.students = students;
+		subject.grade = getSubjectGrade(subject.grade_id,grades_query.result);
+		subject.allGrades = grades_query.result;
+		onComplete(null,subject);
+	}
+	
+	var score_query = new queryHelper("select score, student_id from scores where subject_id="+subject_id,populateSubject,'all');
+	var student_query = new queryHelper("select id, name from students where grade_id = $grade_id",score_query,'all',function(){
+		return {"$grade_id":subject_query.result.grade_id};
 	});
+	var subject_query =new queryHelper("select id, grade_id, name, maxScore from subjects where id="+subject_id,student_query,'get')
+	var grades_query = _getGrades(db,subject_query);
 }
-var getGrade = function(grade_id,grades){
+
+var getSubjectGrade = function(grade_id,grades){
 	return grades.filter(function(grade){return grade.id==grade_id});
 }
 

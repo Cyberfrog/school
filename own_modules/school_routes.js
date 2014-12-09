@@ -1,4 +1,5 @@
 var school_records = require('./school_records').init('./data/school.db');
+
 exports.get_grades = function(req,res){
 	school_records.getGrades(function(err,grades){
 		res.render('grades',{grades:grades});
@@ -73,7 +74,6 @@ exports.updateStudent=function(req,res,next){
 	});
 }
 var modifyStudentBody = function(id,body){
-	debugger;
 	var student = {id:id,
 		name : body.student_name, 
 		grade_id:body.grade}
@@ -81,7 +81,8 @@ var modifyStudentBody = function(id,body){
 	return student;
 } 
 var populate_with_Score = function(student,body){
-	var scores_keys = Object.keys(body).filter(function(key){return key.indexOf("score")>=0});
+	var scores_keys = Object.keys(body).filter(
+		function(key){return key.indexOf("score")>=0});
 	var scores =  scores_keys.map(function(key){
 		return {subject_id:key.split('_')[1],score:body[key]};
 	}) ;

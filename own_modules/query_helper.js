@@ -23,9 +23,13 @@ QueryHelper.prototype = {
 			}
 			query.next(err,result);
 		}
-		db[query.dbMethod](query.query,query.query_params,callBack); 
+		var params = isFunction(query.query_params)?query.query_params():query.query_params;
+		db[query.dbMethod](query.query,params,callBack); 
 	}		
 }
+ var isFunction = function(params){
+ 	return params instanceof Function; 
+ }
 
 QueryHelper.each =function(query,parameters,onComplete,db){
 

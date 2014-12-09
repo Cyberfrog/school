@@ -45,7 +45,7 @@ describe('#queryHelper',function(){
 		        done();
 			}
 			var select_name = new QueryHelper("select name from student",onComplete,'get');
-			var select_query = new QueryHelper("select * from student where id= $id",select_name,'all',{'$id':1});
+			var select_query = new QueryHelper("select * from student where id= $id",select_name,'all',function(){return {'$id':1}});
 			var insert_query = new QueryHelper("insert into student (id , name) values($id, $name);",select_query,'run',{"$id":1,"$name":'bunti'});
 			var create_query = new QueryHelper("create table student (id integer , name text); ",insert_query,'run');
 			create_query.fire(db);
