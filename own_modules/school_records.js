@@ -1,12 +1,20 @@
 var sqlite3 = require("sqlite3").verbose();
 var queryHelper = require("./query_helper.js").queryHelper;
 
-var createSelect = function(fields,tables,where){
+var createSelect =function(fields,tables,where){
 	var query_template =  "SELECT _FIELDS_ FROM _TABLES_ ";
 	var query = query_template.replace('_FIELDS_',fields.join());
-	query = query.replace('_TABLES_',tables.join());
+	query = query.replace('_TABLES_',tables.join());	
 	where&&(query = query+" WHERE "+where.join(' and '));
 	return query ;
+}
+
+var createInsert = function(table,fields,values){
+	var query_template = "INSERT INTO _TABLE_ (_FIELDS_) VALUES (_VALUES_);"
+	var query =  query_template.replace("_TABLE_",table);
+	query = query.replace("_FIELDS_",fields.join());
+	query = query.replace("_VALUES_",values.join());
+	return query;
 }
 
 var _getGrades = function(db,next){
@@ -41,7 +49,8 @@ var _getSubjectsByGrade = function(db,onComplete){
 };
 
 var _updateSubject = function(subject,db,onComplete){
-	var subject_query = "update subjects set name= $name, grade_id= $grade_id, maxScore = $maxScore where id =$id";
+	var subject_query = "update subjects set name= $name, grade_id= $grade_id,"+
+						" maxScore = $maxScore where id =$id";
 	var subject_query_params = {"$id":subject.id,
 								"$name":subject.name,
 								"$grade_id":subject.grade_id,
@@ -155,7 +164,7 @@ var formatScores = function(scores,student_id){
 }
 
 var _addStudent = function(student,db,onComplete){
-	var insertStudent = "INSERT INTO students (name,grade_id) VALUES($name,$grade_id);";
+	var insertStudent =createInsert('students',['name','grade_id'],['$name','$grade_id']);
 	var params = { '$name':student.name,"$grade_id":student.grade_id};
 	
 	var score_query = function(err,stud_id){
@@ -213,7 +222,7 @@ var getSubjectDetails = function(subject_id,db,onComplete){
 	}
 	var selectScore = createSelect(['score','student_id'] ,['scores'],["subject_id="+subject_id]);
 	var selectStudent = createSelect(['id','name'],["students"],["grade_id = $grade_id"]);
-	var selectSubject = createSelect(['id','grade_id','name','maxScore'],['subjects'] ,["id="+subject_id]);
+	var selectSubject = createSelect(['id','grade_id','name','maxScore'],['subjects'],["id="+subject_id]);
 
 	var score_query = new queryHelper(selectScore,populateSubject,'all');
 	var student_query = new queryHelper(selectStudent,score_query,'all',function(){
@@ -246,41 +255,43 @@ var _getNewStudentsForSubject = function(subject_id,db,onComplete){
 	
 }
 
-var init = function(location){	
-	var operate = function(operation){
-		return function(){
-			var onComplete = (arguments.length == 2)?arguments[1]:arguments[0];
-			var arg = (arguments.length == 2) && arguments[0];
+var operate = function(operation){
+	return function(){
+		var onComplete = (arguments.length == 2)?arguments[1]:arguments[0];
+		var arg = (arguments.length == 2) && arguments[0];
 
-			var onDBOpen = function(err){
-				if(err){onComplete(err);return;}
-				db.run("PRAGMA foreign_keys = 'ON';");
-				arg && operation(arg,db,onComplete);
-				arg || operation(db,onComplete);
-				db.close();
-			};
-			var db = new sqlite3.Database(location,onDBOpen);
-		};	
-	};
-
-	var records = {		
-		getGrades: operate(_getGrades),
-		getStudentsByGrade: operate(_getStudentsByGrade),
-		getSubjectsByGrade: operate(_getSubjectsByGrade),
-		getStudentSummary: operate(_getStudentSummary),
-		getGradeSummary: operate(_getGradeSummary),
-		getSubjectSummary: operate(_getSubjectSummary),
-		updateGradeName: operate(_updateGradeName),
-		updateStudent:operate(_updateStudent),
-		updateSubject:operate(_updateSubject),
-		addStudent:operate(_addStudent),
-		getSubjects:operate(_getSubjects),
-		addSubject:operate(_addSubject),
-		addScore:operate(_addScore),
-		getNewStudentsForSubject:operate(_getNewStudentsForSubject)
-	};
-
-	return records;
+		var onDBOpen = function(err){
+			if(err){onComplete(err);return;}
+			db.run("PRAGMA foreign_keys = 'ON';");
+			arg && operation(arg,db,onComplete);
+			arg || operation(db,onComplete);
+			db.close();
+		};
+		var db = new sqlite3.Database(records.dbLocation,onDBOpen);
+	};	
 };
 
-exports.init = init;
+var records  = {
+	getGrades: operate(_getGrades),
+	getStudentsByGrade: operate(_getStudentsByGrade),
+	getSubjectsByGrade: operate(_getSubjectsByGrade),
+	getStudentSummary: operate(_getStudentSummary),
+	getGradeSummary: operate(_getGradeSummary),
+	getSubjectSummary: operate(_getSubjectSummary),
+	updateGradeName: operate(_updateGradeName),
+	updateStudent:operate(_updateStudent),
+	updateSubject:operate(_updateSubject),
+	addStudent:operate(_addStudent),
+	getSubjects:operate(_getSubjects),
+	addSubject:operate(_addSubject),
+	addScore:operate(_addScore),
+	getNewStudentsForSubject:operate(_getNewStudentsForSubject)
+}
+
+var init = function(location){
+		records.dbLocation = location;
+		return records;
+}
+
+
+exports.init =init;
